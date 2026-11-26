@@ -6,9 +6,9 @@ BREAK = 20                     # seconds
 DATA = os.environ.get("FENN_DATA_DIR") or os.environ.get("NOOK_DATA_DIR") or "."   # NOOK_DATA_DIR is the older name
 CFG_PATH = os.path.join(DATA, "config.json")
 out_lock, lock = threading.Lock(), threading.RLock()
-cfg = {"work": 20, "sound": True}
+cfg = {"work": 20, "sound": True, "popup": True}
 mode, paused, end, pause_left = "work", False, 0.0, 0.0
-page_open, tile_w = False, 104
+page_open, tile_w, popped = False, 104, False
 
 
 def send(msg):
@@ -57,16 +57,19 @@ def start_work():
 
 
 def start_break():
-    global mode, paused, end
+    global mode, paused, end, popped
     mode, paused, end = "break", False, time.time() + BREAK
     send({"type": "badge", "badge": {"kind": "pulse"}})
-    send({"type": "show"})
+    popped = bool(cfg["popup"])
+    if popped:
+        send({"type": "show"})
     beep()
 
 
 def finish_break():
     send({"type": "badge", "badge": None})
-    send({"type": "close_page"})
+    if popped:
+        send({"type": "close_page"})
     beep()
     start_work()
 
@@ -112,6 +115,7 @@ def render():
             {"type": "chips", "id": "work", "options": [f"{m} min" for m in WORK_OPTS],
              "selected": WORK_OPTS.index(cfg["work"]) if cfg["work"] in WORK_OPTS else 0},
             {"type": "spacer"},
+            {"type": "toggle", "id": "popup", "value": bool(cfg["popup"]), "label": "Pop up"},
             {"type": "toggle", "id": "sound", "value": bool(cfg["sound"]), "label": "Sound"}]}]}
     send({"type": "page", "view": page})
 
@@ -160,6 +164,9 @@ def main():
                     save_cfg()
                     if mode == "work":
                         start_work()
+                elif i == "popup":
+                    cfg["popup"] = bool(v)
+                    save_cfg()
                 elif i == "sound":
                     cfg["sound"] = bool(v)
                     save_cfg()

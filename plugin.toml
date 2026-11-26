@@ -1,7 +1,7 @@
 id          = "eyebreak"
 name        = "Eye break"
 description = "20-20-20 reminder: every 20 min, look 20 ft away for 20 s. Offline."
-version     = "0.1.1"
+version     = "0.2.0"
 icon        = "eye"
 size        = "wide"
 mode        = "live"
